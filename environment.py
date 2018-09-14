@@ -55,12 +55,15 @@ class Agent:
         self.actions.append(actions)
 
     def do_action(self, action):
-        state, reward = self.state.do_action(action)
-        self.state = state
-        self.reward += self.discount * reward - self.penalty
+        if action in self.actions:
+            state, reward = self.state.do_action(action)
+            self.state = state
+            self.reward += self.discount * reward - self.penalty
+        else:
+            self.reward += -self.penalty
 
     def __str__(self):
-        string = 'Agent {0} now in state {1}, accumulated reward is {2}'.format(self.name, self.state, self.reward)
+        string = 'Agent {0} now in state {1}, accumulated reward is {2:.2f}'.format(self.name, self.state, self.reward)
         return string
 
 
