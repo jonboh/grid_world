@@ -1,4 +1,3 @@
-
 class resdict(dict):
     def __init__(self, default_out=None, *args, **kargs):
         super().__init__(*args, **kargs)
@@ -7,10 +6,11 @@ class resdict(dict):
     def __missing__(self, key):
         return self.default_out
 
-    def update(self, dictionary):
+    def update(self, dictionary):  # update will only work with dictionaries
         super().update(dictionary)
         if type(dictionary) is resdict:
             self.default_out = dictionary.default_out
+
 
 class State:
     def __init__(self, name, action2state=None, action2reward=None):
@@ -47,88 +47,89 @@ class Agent:
         self.name = name
         self.state = state
         self.reward = 0
-        self.actions = [void_action]
+        self.actions = list()
         self.discount = discount
         self.penalty = penalty
 
     def define_actions(self, actions: list):
-        self.actions.append(actions)
+        self.actions += actions
 
     def do_action(self, action):
         if action in self.actions:
             state, reward = self.state.do_action(action)
             self.state = state
-            self.reward += self.discount * reward - self.penalty
+            self.reward += self.discount * reward + self.penalty
         else:
-            self.reward += -self.penalty
+            self.reward += self.penalty
 
     def __str__(self):
         string = 'Agent {0} now in state {1}, accumulated reward is {2:.2f}'.format(self.name, self.state, self.reward)
         return string
 
 
-def select_action(string):
+class ClassicGridWorld:
+    def __init__(self, food=1, death=-1, discount=0.9, penalty=-0.01):
+        up = Action(name='up')
+        down = Action(name='down')
+        left = Action(name='left')
+        right = Action(name='right')
+        void_action = Action(name='void')
+        actions = [up, down, left, right, void_action]
+
+        state00 = State(name='s00')
+        state01 = State(name='s01')
+        state02 = State(name='s02')
+        state03 = State(name='s03')
+        state10 = State(name='s10')
+        state12 = State(name='s12')
+        state13 = State(name='s13')
+        state20 = State(name='s20')
+        state21 = State(name='s21')
+        state22 = State(name='s22')
+        state23 = State(name='s23')
+        # self.states = [state00, state01, state02, state03, state10, state12, state13, state20, state21, state22, state23]
+
+        state00.define_action2state({up: state10, right: state01})
+        state01.define_action2state({left: state00, right: state02})
+        state02.define_action2state({up: state12, left: state01, right: state03})
+        state03.define_action2state(resdict(state00))
+        state03.define_action2reward(resdict(death))
+        state10.define_action2state({up: state20, down: state00})
+        state12.define_action2state({up: state22, down: state02, right: state13})
+        state13.define_action2state({down: state03, left: state12, up: state23})
+        state20.define_action2state({down: state10, right: state21})
+        state21.define_action2state({left: state20, right: state22})
+        state22.define_action2state({down: state12, left: state21, right: state23})
+        state23.define_action2state(resdict(state00))
+        state23.define_action2reward(resdict(food))
+
+        self.agent = Agent(name='billy', state=state00, discount=discount, penalty=penalty)
+        self.agent.define_actions(actions)
+
+
+def select_action_helper(string, environment):
     if string == 'up':
-        action = up
+        action = environment.agent.actions[0]
     elif string == 'down':
-        action = down
+        action = environment.agent.actions[1]
     elif string == 'left':
-        action = left
+        action = environment.agent.actions[2]
     elif string == 'right':
-        action = right
+        action = environment.agent.actions[3]
     else:
-        action = void_action
+        action = environment.agent.actions[4]
     return action
 
 
 if __name__ == '__main__':
-    # Define Environment
-    void_action = Action(name='void')
-    up = Action(name='up')
-    down = Action(name='down')
-    left = Action(name='left')
-    right = Action(name='right')
 
-    state00 = State(name='s00')
-    state01 = State(name='s01')
-    state02 = State(name='s02')
-    state03 = State(name='s03')
-    state10 = State(name='s10')
-    state12 = State(name='s12')
-    state13 = State(name='s13')
-    state20 = State(name='s20')
-    state21 = State(name='s21')
-    state22 = State(name='s22')
-    state23 = State(name='s23')
-    state30 = State(name='s30')
-    state31 = State(name='s31')
-    state32 = State(name='s32')
-    state33 = State(name='s33')
-
-    food = +1
-    death = -1
-    state00.define_action2state({up: state10, right: state01})
-    state01.define_action2state({left: state00, right: state02})
-    state02.define_action2state({up: state12, left: state01, right: state03})
-    state03.define_action2state(resdict(state00))
-    state03.define_action2reward(resdict(death))
-    state10.define_action2state({up: state20, down: state00})
-    state12.define_action2state({up: state22, down: state02, right: state13})
-    state13.define_action2state({down: state03, left: state12, up: state23})
-    state20.define_action2state({down: state10, right: state21})
-    state21.define_action2state({left: state20, right: state22})
-    state22.define_action2state({down: state12, left: state21, right: state23})
-    state23.define_action2state(resdict(state00))
-    state23.define_action2reward(resdict(food))
-
-    agent = Agent(name='billy', state=state22, discount=0.9, penalty=0.01)
-    agent.define_actions([up, down, left, right])
-
+    environment = ClassicGridWorld()
     # Play
     print('Play! (Write the name of the action you want to take)')
+    print('Type "exit" to quit')
     input_str = ''
     while input_str != 'exit':
-        print(agent)
+        print(environment.agent)
         input_str = input()
-        action = select_action(input_str)
-        agent.do_action(action)
+        action = select_action_helper(input_str, environment)
+        environment.agent.do_action(action)
