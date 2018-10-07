@@ -41,6 +41,8 @@ class Action:
     def __init__(self, name):
         self.name = name
 
+    def __str__(self):
+        return self.name
 
 class Agent:
     def __init__(self, name, state=None, discount=0.9, penalty=0.):
@@ -87,7 +89,8 @@ class ClassicGridWorld:
         state21 = State(name='s21')
         state22 = State(name='s22')
         state23 = State(name='s23')
-        # self.states = [state00, state01, state02, state03, state10, state12, state13, state20, state21, state22, state23]
+        self.states = [state00, state01, state02, state03, state10, state12, state13, state20, state21, state22,
+                       state23]
 
         state00.define_action2state({up: state10, right: state01})
         state01.define_action2state({left: state00, right: state02})
