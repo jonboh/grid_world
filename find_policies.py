@@ -1,12 +1,18 @@
+import numpy as np
 from environment import *
 
 
 class ValueIteration:
-    def __init__(self, environment):
+    def __init__(self, environment, utility=None):
         self.environment = environment
-        self.utilty = dict()
-        for state in environment.states:
-            self.utilty.update({state: 0})
+        if utility is None:
+            self.utilty = dict()
+            for state in environment.states:
+                rand = np.random.random()
+                self.utilty.update({state: rand})
+        else:
+            # check_environment_utility_are_compatible() UNIMPLEMENTED
+            self.utilty = utility
 
     def iterate(self, n_iterations):
         actions = environment.agent.actions
