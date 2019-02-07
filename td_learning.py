@@ -73,6 +73,10 @@ class TDAgent:
                                                 eligibility[state_action]
 
 
+def value_table_print(value_table):
+    for key, value in value_table.items():
+        print('{0}, {1:5}: {2:7.4f}'.format(key[0], key[1].__str__(), value))
+
 if __name__ == '__main__':
     environment = env.ClassicGridWorld()
     td_agent = TDAgent(0.7, 0.05, environment)
@@ -82,6 +86,7 @@ if __name__ == '__main__':
         episode = td_agent.play_greedy_episode(10)
         td_agent.process_episode(episode)
         environment.reset()
-
+        # value_table_print(td_agent.value_table)
+        # input()
     episode = td_agent.play_greedy_episode(10)
     print(episode)
