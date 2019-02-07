@@ -44,6 +44,7 @@ class Action:
     def __str__(self):
         return self.name
 
+
 class Agent:
     def __init__(self, name, state=None, discount=0.9, penalty=0.):
         self.name = name

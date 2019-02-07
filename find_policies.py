@@ -65,13 +65,14 @@ class PolicyIteration:
             for state in self.policy:
                 max_action = -math.inf
                 max_utility = -math.inf
-                for action in actions: # argmax( T(s,a,s') * U(s')
+                for action in actions:  # argmax( T(s,a,s') * U(s')
                     new_state, new_reward = state.do_action(action)
                     if max_utility < utility[new_state]:
                         max_utility = utility[new_state]
                         max_action = action
                 self.policy[state] = max_action
         return self.policy
+
 
 if __name__ == '__main__':
     environment = ClassicGridWorld(food=1, death=-1, penalty=-0.1, discount=0.9)
