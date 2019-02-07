@@ -107,8 +107,13 @@ class ClassicGridWorld:
         state23.define_action2state(resdict(state00))
         state23.define_action2reward(resdict(food))
 
-        self.agent = Agent(name='billy', state=state00, discount=discount, penalty=penalty)
+        self.initial_state = state00
+        self.agent = Agent(name='billy', state=self.initial_state, discount=discount, penalty=penalty)
         self.agent.define_actions(actions)
+
+    def reset(self):
+        self.agent.state = self.initial_state
+        self.agent.reward = 0
 
 
 def select_action_helper(string, environment):
