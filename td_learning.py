@@ -66,12 +66,32 @@ class TDAgent:
                 else:
                     self.value_table[state_action] = self.value_table[state_action] + self.learn_rate * (
                             episode.rewards[t] +
-                            self.environment.agent.discount * prev_value_table[state_action] -
-                            prev_value_table[state_action]
+                            self.environment.agent.discount * prev_value_table[episode.states[t]] -
+                            prev_value_table[episode.states[t]]
                     ) * eligibility[state_action]
                     eligibility[state_action] = self.td_lambda * self.environment.agent.discount * \
                                                 eligibility[state_action]
 
+    # def process_episode_tdlambda0(self, episode):
+    #     prev_value_table = copy.copy(self.value_table)
+
+
+    # def process_episode_tdlambda1(self, episode):
+    #     prev_value_table = copy.copy(self.value_table)
+    #     eligibility = dict.fromkeys(self.value_table.keys(), 0)
+    #     for t in range(episode.length):
+    #         eligibility[episode.states[t]] = eligibility[episode.states[t]] + 1
+    #         for state_action in self.value_table.keys():
+    #             if eligibility[state_action] == 0:
+    #                 continue
+    #             else:
+    #                 self.value_table[state_action] = self.value_table[state_action] + self.learn_rate * (
+    #                         episode.rewards[t] +
+    #                         self.environment.agent.discount * prev_value_table[state_action] -
+    #                         prev_value_table[state_action]
+    #                 ) * eligibility[state_action]
+    #                 eligibility[state_action] = self.td_lambda * self.environment.agent.discount * \
+    #                                             eligibility[state_action]
 
 def value_table_print(value_table):
     for key, value in value_table.items():
