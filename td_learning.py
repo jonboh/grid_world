@@ -1,6 +1,7 @@
 import copy
 import math
 from itertools import product
+import numpy as np
 
 import environment as env
 
@@ -17,6 +18,10 @@ class TDEpisode:
             self.rewards[self.rewards.index(None)] = reward
         except ValueError:
             raise EOFError('Episode is already filled')
+
+    def print_action_sequence(self):
+        str_prt = ', '.join(map(lambda x: str(x[1]), self.states))
+        print(str_prt)
 
     def __str__(self):
         str_ret = ''
@@ -47,15 +52,20 @@ class TDAgent:
 
     def play_exploratory_episode(self, episode_lenght, explore_rate):
         episode = TDEpisode(episode_lenght)
+        rand_vect = np.random.randn(episode_length)
+        rand_index = np.random.randint(0, len(environment.agent.actions), episode_length)  # not all will be used
         for t in range(episode_lenght):
             state = environment.agent.state
-            action = self.search_max_reward_action(state)
+            if rand_vect[t] >= explore_rate:
+                action = self.search_max_reward_action(state)
+            else:
+                action = environment.agent.actions[rand_index[t]]
             environment.agent.do_action(action)
             episode.add_next_state_action_reward(state, action, environment.agent.reward)
             environment.agent.reward = 0  # otherwise it will be accumulated
+        environment.reset()
         self.unprocessed_episodes.append(episode)
         return episode
-
 
     def play_greedy_episode(self, episode_lenght):
         episode = TDEpisode(episode_lenght)
@@ -65,7 +75,7 @@ class TDAgent:
             environment.agent.do_action(action)
             episode.add_next_state_action_reward(state, action, environment.agent.reward)
             environment.agent.reward = 0  # otherwise it will be accumulated
-        self.unprocessed_episodes.append(episode)
+        environment.reset()
         return episode
 
     def process_episode(self, episode):
@@ -107,11 +117,11 @@ class TDAgent:
             for state_action in self.value_table.keys():
                 if eligibility[state_action] == 0:
                     continue
-                elif t!=0:
+                elif t != 0:
                     self.value_table[state_action] = self.value_table[state_action] + self.learn_rate * (
                             episode.rewards[t] +
                             self.environment.agent.discount * prev_value_table[episode.states[t]] -
-                            prev_value_table[episode.states[t-1]]
+                            prev_value_table[episode.states[t - 1]]
                     ) * eligibility[state_action]
                     eligibility[state_action] = self.environment.agent.discount * eligibility[state_action]
                 else:
@@ -126,21 +136,23 @@ def value_table_print(value_table):
     for key, value in value_table.items():
         print('{0}, {1:5}: {2:7.4f}'.format(key[0], key[1].__str__(), value))
 
+
 if __name__ == '__main__':
     episode_length = 100
-    learning_rate = 1/episode_length**(2/3)
-    environment = env.ClassicGridWorld()
+    learning_rate = 1 / episode_length ** 2
+    environment = env.ClassicGridWorld(food=10, death=-5, discount=0.9, penalty=-0.1)
     td_agent = TDAgent(0.7, learning_rate, environment)
-    n_batch = 100
+    n_batch = 1000
     n_episode_batch = 100
     count = 0
     for i in range(n_batch):
         for j in range(n_episode_batch):
-            episode = td_agent.play_greedy_episode(episode_length)
-            environment.reset()
-            print('Episode: {0}  Reward: {1:4.2f}'.format(count, sum(episode.rewards)))
-            count+=1
+            episode = td_agent.play_exploratory_episode(episode_length, 0.03)
+            count += 1
         td_agent.process_episodes()
+        episode = td_agent.play_greedy_episode(episode_length)
+        print('Greedy Episode: {0}  Reward: {1:4.2f}'.format(i, sum(episode.rewards)))
+        episode.print_action_sequence()
         value_table_print(td_agent.value_table)
         input()
     episode = td_agent.play_greedy_episode(10)
