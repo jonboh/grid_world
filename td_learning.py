@@ -33,6 +33,7 @@ class TDAgent:
         # value_table( state space ) = cartesianproduct(states, actions)
         self.value_table = dict.fromkeys(product(environment.states, environment.agent.actions), 0)
         self.episodes = list()
+        self.unprocessed_episodes = list()
 
     def search_max_reward_action(self, state):
         state_action_list = [(state, action) for action in self.environment.agent.actions]
@@ -44,6 +45,18 @@ class TDAgent:
                 max_value = self.value_table[state_action]
         return max_state_action[1]
 
+    def play_exploratory_episode(self, episode_lenght, explore_rate):
+        episode = TDEpisode(episode_lenght)
+        for t in range(episode_lenght):
+            state = environment.agent.state
+            action = self.search_max_reward_action(state)
+            environment.agent.do_action(action)
+            episode.add_next_state_action_reward(state, action, environment.agent.reward)
+            environment.agent.reward = 0  # otherwise it will be accumulated
+        self.unprocessed_episodes.append(episode)
+        return episode
+
+
     def play_greedy_episode(self, episode_lenght):
         episode = TDEpisode(episode_lenght)
         for t in range(episode_lenght):
@@ -52,6 +65,7 @@ class TDAgent:
             environment.agent.do_action(action)
             episode.add_next_state_action_reward(state, action, environment.agent.reward)
             environment.agent.reward = 0  # otherwise it will be accumulated
+        self.unprocessed_episodes.append(episode)
         return episode
 
     def process_episode(self, episode):
@@ -70,6 +84,11 @@ class TDAgent:
                     ) * eligibility[state_action]
                     eligibility[state_action] = self.td_lambda * self.environment.agent.discount * \
                                                 eligibility[state_action]
+
+    def process_episodes(self):
+        for episode in self.unprocessed_episodes:
+            self.process_episode(episode)
+        self.unprocessed_episodes = list()
 
     def process_episode_tdlambda0(self, episode):
         prev_value_table = copy.copy(self.value_table)
@@ -112,13 +131,17 @@ if __name__ == '__main__':
     learning_rate = 1/episode_length**(2/3)
     environment = env.ClassicGridWorld()
     td_agent = TDAgent(0.7, learning_rate, environment)
-    n_episodes = 100
-    for i in range(n_episodes):
-        episode = td_agent.play_greedy_episode(10)
-        td_agent.process_episode(episode)
-        environment.reset()
-        print('Episode: {0}  Reward: {1:4.2f}'.format(i, sum(episode.rewards)))
-        # value_table_print(td_agent.value_table)
-        # input()
+    n_batch = 100
+    n_episode_batch = 100
+    count = 0
+    for i in range(n_batch):
+        for j in range(n_episode_batch):
+            episode = td_agent.play_greedy_episode(episode_length)
+            environment.reset()
+            print('Episode: {0}  Reward: {1:4.2f}'.format(count, sum(episode.rewards)))
+            count+=1
+        td_agent.process_episodes()
+        value_table_print(td_agent.value_table)
+        input()
     episode = td_agent.play_greedy_episode(10)
     print(episode)
