@@ -44,7 +44,7 @@ class TDAgent:
                 max_value = self.value_table[state_action]
         return max_state_action[1]
 
-    def play_greedy_episode(self, episode_lenght, return_seq=False):
+    def play_greedy_episode(self, episode_lenght):
         episode = TDEpisode(episode_lenght)
         for t in range(episode_lenght):
             state = environment.agent.state
@@ -80,8 +80,6 @@ class TDAgent:
                         self.environment.agent.discount * prev_value_table[episode.states[t]] -
                         prev_value_table[episode.states[t]])
 
-
-
     def process_episode_tdlambda1(self, episode):
         prev_value_table = copy.copy(self.value_table)
         eligibility = dict.fromkeys(self.value_table.keys(), 0)
@@ -105,20 +103,21 @@ class TDAgent:
                     eligibility[state_action] = self.environment.agent.discount * eligibility[state_action]
 
 
-
 def value_table_print(value_table):
     for key, value in value_table.items():
         print('{0}, {1:5}: {2:7.4f}'.format(key[0], key[1].__str__(), value))
 
 if __name__ == '__main__':
+    episode_length = 100
+    learning_rate = 1/episode_length**(2/3)
     environment = env.ClassicGridWorld()
-    td_agent = TDAgent(0.7, 0.05, environment)
+    td_agent = TDAgent(0.7, learning_rate, environment)
     n_episodes = 100
     for i in range(n_episodes):
-        print('Episode: {0}'.format(i))
         episode = td_agent.play_greedy_episode(10)
         td_agent.process_episode(episode)
         environment.reset()
+        print('Episode: {0}  Reward: {1:4.2f}'.format(i, sum(episode.rewards)))
         # value_table_print(td_agent.value_table)
         # input()
     episode = td_agent.play_greedy_episode(10)
