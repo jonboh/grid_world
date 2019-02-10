@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class resdict(dict):
     def __init__(self, default_out=None, *args, **kargs):
         super().__init__(*args, **kargs)
@@ -15,22 +18,70 @@ class resdict(dict):
 class State:
     def __init__(self, name, action2state=None, action2reward=None):
         self.name = name
-        self.action2state = resdict(self)
+        self.action2state = resdict(((self,), (1,)))  # default outcome is itself (void or invalid action)
         if action2state is not None:
             self.define_action2state(action2state)
-        self.action2reward = resdict(0)
+        self.action2reward = resdict(((0,), (1,)))  # default reward is 0
         if action2reward is not None:
             self.define_action2reward(action2reward)
 
     def define_action2state(self, action2state: dict):
+        # Check Input
+        try:
+            for key, entry in action2state.items():
+                if len(entry) != 2:
+                    raise TypeError('Wrong action2state definition in {0}'.format(self.name))
+                elif len(entry[0]) != len(entry[1]):
+                    raise TypeError('Wrong action2state definition in {0}'.format(self.name))
+                elif type(entry[0]) != tuple or type(entry[1]) != tuple:
+                    raise TypeError('Wrong action2state definition in {0}'.format(self.name))
+        except:
+            raise TypeError('Wrong action2state definition in {0}'.format(self.name))
         self.action2state.update(action2state)
 
     def define_action2reward(self, action2reward: dict):
+        # Check Input
+        try:
+            for key, entry in action2reward.items():
+                if len(entry) != 2:
+                    raise TypeError('Wrong action2state definition in {0}'.format(self.name))
+                elif len(entry[0]) != len(entry[1]):
+                    raise TypeError('Wrong action2state definition in {0}'.format(self.name))
+                elif type(entry[0]) != tuple or type(entry[1]) != tuple:
+                    raise TypeError('Wrong action2state definition in {0}'.format(self.name))
+        except:
+            raise TypeError('Wrong action2state definition in {0}'.format(self.name))
         self.action2reward.update(action2reward)
 
+    def random_selector(self, trans_entry):
+        rand = np.random.random_sample(1)[0]
+        cumprob = 0
+        i = 0
+        for prob in trans_entry[1]:
+            cumprob += prob
+            if rand < cumprob:
+                return trans_entry[0][i]
+            i += 1
+
+    def trans_action2state(self, action):
+        trans_entry = self.action2state[action]  # transition entry
+        if len(trans_entry[0]) == 1:
+            return trans_entry[0][0]
+        else:  # random according to State Transition Model
+            action = self.random_selector(trans_entry)
+            return action
+
+    def trans_action2reward(self, action):
+        trans_entry = self.action2reward[action]  # transition entry
+        if len(trans_entry[0]) == 1:
+            return trans_entry[0][0]
+        else:  # random according to Reward Transition Model
+            reward = self.random_selector(trans_entry)
+            return reward
+
     def do_action(self, action):
-        new_state = self.action2state[action]
-        new_reward = self.action2reward[action]
+        new_state = self.trans_action2state(action)
+        new_reward = self.trans_action2reward(action)
         return new_state, new_reward
 
     def __str__(self):
@@ -93,19 +144,28 @@ class ClassicGridWorld:
         self.states = [state00, state01, state02, state03, state10, state12, state13, state20, state21, state22,
                        state23]
 
-        state00.define_action2state({up: state10, right: state01})
-        state01.define_action2state({left: state00, right: state02})
-        state02.define_action2state({up: state12, left: state01, right: state03})
-        state03.define_action2state(resdict(state00))
-        state03.define_action2reward(resdict(death))
-        state10.define_action2state({up: state20, down: state00})
-        state12.define_action2state({up: state22, down: state02, right: state13})
-        state13.define_action2state({down: state03, left: state12, up: state23})
-        state20.define_action2state({down: state10, right: state21})
-        state21.define_action2state({left: state20, right: state22})
-        state22.define_action2state({down: state12, left: state21, right: state23})
-        state23.define_action2state(resdict(state00))
-        state23.define_action2reward(resdict(food))
+        state00.define_action2state({up: ((state10,), (1,)), right: ((state01,), (1,))})
+        state01.define_action2state({left: ((state00,), (1,)), right: ((state02,), (1,))})
+        state02.define_action2state({up: ((state12,), (1,)), left: ((state01,), (1,)), right: ((state03,), (1,))})
+        state03.define_action2state(resdict(((state00,), (1,))))
+        state03.define_action2reward(resdict(((death,), (1,))))
+        state10.define_action2state({up: ((state20,), (1,)), down: ((state00,), (1,))})
+        state12.define_action2state({up: ((state22,), (1,)), down: ((state02,), (1,)), right: ((state13,), (1,))})
+        state13.define_action2state({down: ((state03,), (1,)), left: ((state12,), (1,)), up: ((state23,), (1,))})
+        state20.define_action2state({down: ((state10,), (1,)), right: ((state21,), (1,))})
+        state21.define_action2state({left: ((state20,), (1,)), right: ((state22,), (1,))})
+        state22.define_action2state({down: ((state12,), (1,)), left: ((state21,), (1,)), right: ((state23,), (1,))})
+        state23.define_action2state(resdict(((state00,), (1,))))
+        state23.define_action2reward(resdict(((food,), (1,))))
+
+        self.initial_state = state00
+        self.agent = Agent(name='billy', state=self.initial_state, discount=discount, penalty=penalty)
+        self.agent.define_actions(actions)
+
+    def reset(self):
+        self.agent.state = self.initial_state
+        self.agent.reward = 0
+
 
         self.initial_state = state00
         self.agent = Agent(name='billy', state=self.initial_state, discount=discount, penalty=penalty)
