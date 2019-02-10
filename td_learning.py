@@ -9,8 +9,8 @@ import environment as env
 class TDEpisode:
     def __init__(self, lenght):
         self.length = lenght
-        self.states = [None for i in range(lenght)]
-        self.rewards = [None for i in range(lenght)]
+        self.states = [None for _ in range(lenght)]
+        self.rewards = [None for _ in range(lenght)]
 
     def add_next_state_action_reward(self, state, action, reward):
         try:
