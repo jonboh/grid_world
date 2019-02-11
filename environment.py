@@ -17,6 +17,7 @@ class resdict(dict):
 
 class State:
     def __init__(self, name, action2state=None, action2reward=None):
+        self.prob_tolerance = 0.05
         self.name = name
         self.action2state = resdict(((self,), (1,)))  # default outcome is itself (void or invalid action)
         if action2state is not None:
@@ -35,6 +36,9 @@ class State:
                     raise TypeError('Wrong action2state definition in {0}'.format(self.name))
                 elif type(entry[0]) != tuple or type(entry[1]) != tuple:
                     raise TypeError('Wrong action2state definition in {0}'.format(self.name))
+                elif 1.0 - self.prob_tolerance > sum(entry[1]) > 1.0 + self.prob_tolerance:
+                    raise TypeError('Wrong action2state definition in {0}. '
+                                    'Probabilities must sum 1'.format(self.name))
         except:
             raise TypeError('Wrong action2state definition in {0}'.format(self.name))
         self.action2state.update(action2state)
@@ -44,11 +48,14 @@ class State:
         try:
             for key, entry in action2reward.items():
                 if len(entry) != 2:
-                    raise TypeError('Wrong action2state definition in {0}'.format(self.name))
+                    raise TypeError('Wrong action2reward definition in {0}'.format(self.name))
                 elif len(entry[0]) != len(entry[1]):
-                    raise TypeError('Wrong action2state definition in {0}'.format(self.name))
+                    raise TypeError('Wrong action2reward definition in {0}'.format(self.name))
                 elif type(entry[0]) != tuple or type(entry[1]) != tuple:
-                    raise TypeError('Wrong action2state definition in {0}'.format(self.name))
+                    raise TypeError('Wrong action2reward definition in {0}'.format(self.name))
+                elif 1.0 - self.prob_tolerance > sum(entry[1]) > 1.0 + self.prob_tolerance:
+                    raise TypeError('Wrong action2reward definition in {0}. '
+                                    'Probabilities must sum 1'.format(self.name))
         except:
             raise TypeError('Wrong action2state definition in {0}'.format(self.name))
         self.action2reward.update(action2reward)
