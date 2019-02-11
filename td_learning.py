@@ -111,6 +111,10 @@ class TDAgent:
             self.process_episode(episode)
         self.unprocessed_episodes = list()
 
+    def print_policy(self):
+        states = set([state_action[0] for state_action in self.value_table.keys()])
+        for state in states:
+            print('State {0} -> {1}'.format(state, self.search_max_reward_action(state)))
 
 def value_table_print(value_table):
     for key, value in value_table.items():
@@ -120,7 +124,7 @@ def value_table_print(value_table):
 if __name__ == '__main__':
     episode_length = 100
     learning_rate = 1 / episode_length ** 2
-    environment = env.ClassicGridWorld(food=10, death=-5, discount=0.9, penalty=-0.1)
+    environment = env.ClassicNonDeterministicGridWorld(food=1, death=-1, discount=0.9, penalty=-0.1)
     td_agent = TDAgent(0.7, learning_rate, environment)
     n_batch = 1000
     n_episode_batch = 100
@@ -131,7 +135,7 @@ if __name__ == '__main__':
             count += 1
         td_agent.process_episodes()
         episode = td_agent.play_greedy_episode(episode_length)
-        value_table_print(td_agent.value_table)
+        td_agent.print_policy()
         print('Greedy Episode: {0}  Reward: {1:4.2f}'.format(i, sum(episode.rewards)))
         episode.print_action_sequence()
         # input()
