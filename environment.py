@@ -36,7 +36,7 @@ class State:
                     raise TypeError('Wrong action2state definition in {0}'.format(self.name))
                 elif type(entry[0]) != tuple or type(entry[1]) != tuple:
                     raise TypeError('Wrong action2state definition in {0}'.format(self.name))
-                elif 1.0 - self.prob_tolerance > sum(entry[1]) > 1.0 + self.prob_tolerance:
+                elif 1.0 - self.prob_tolerance > sum(entry[1]) or sum(entry[1]) > 1.0 + self.prob_tolerance:
                     raise TypeError('Wrong action2state definition in {0}. '
                                     'Probabilities must sum 1'.format(self.name))
         except:
