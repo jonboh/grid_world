@@ -112,9 +112,12 @@ class TDAgent:
         self.unprocessed_episodes = list()
 
     def print_policy(self):
-        states = set([state_action[0] for state_action in self.value_table.keys()])
-        for state in states:
-            print('State {0} -> {1}'.format(state, self.search_max_reward_action(state)))
+        states = tuple(set([state_action[0] for state_action in self.value_table.keys()]))
+        str_states = tuple(map(str, states))
+        sorted_index = tuple(map(lambda x: str_states.index(x), sorted(str_states)))
+        for i in sorted_index:
+            print('State {0} -> {1}'.format(states[i], self.search_max_reward_action(states[i])))
+
 
 def value_table_print(value_table):
     for key, value in value_table.items():
