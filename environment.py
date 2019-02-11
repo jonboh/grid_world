@@ -174,6 +174,72 @@ class ClassicGridWorld:
         self.agent.reward = 0
 
 
+class ClassicNonDeterministicGridWorld:
+    def __init__(self, food=1, death=-1, discount=0.9, penalty=-0.01):
+        up = Action(name='up')
+        down = Action(name='down')
+        left = Action(name='left')
+        right = Action(name='right')
+        void_action = Action(name='void')
+        actions = [up, down, left, right, void_action]
+
+        state00 = State(name='s00')
+        state01 = State(name='s01')
+        state02 = State(name='s02')
+        state03 = State(name='s03')
+        state10 = State(name='s10')
+        state12 = State(name='s12')
+        state13 = State(name='s13')
+        state20 = State(name='s20')
+        state21 = State(name='s21')
+        state22 = State(name='s22')
+        state23 = State(name='s23')
+        self.states = [state00, state01, state02, state03, state10, state12, state13, state20, state21, state22,
+                       state23]
+
+        # State Transitions
+        state00.define_action2state(
+            {up: ((state10, state01, state00), (0.8, 0.1, 0.1)),
+             right: ((state01, state00), (0.9, 0.1))})
+        state01.define_action2state(
+            {left: ((state00, state01, state02), (0.7, 0.1, 0.2)),
+             right: ((state02,), (1,))})
+        state02.define_action2state(
+            {up: ((state12, state02, state03), (0.7, 0.1, 0.2)),
+             left: ((state01, state02, state03), (0.7, 0.1, 0.2)),
+             right: ((state03,), (1,))})
+        state03.define_action2state(
+            resdict(((state00,), (1,))))
+        state10.define_action2state(
+            {up: ((state20, state10), (0.9, 0.1)),
+             down: ((state00,), (1,))})
+        state12.define_action2state(
+            {up: ((state22, state12,), (0.9, 0.1)),
+             down: ((state02,), (1,)),
+             right: ((state13,), (1,))})
+        state13.define_action2state(
+            {down: ((state03,), (1,)),
+             left: ((state12, state13, state03), (0.8, 0.1, 0.1)),
+             up: ((state23, state13), (0.9, 0.1))})
+        state20.define_action2state(
+            {down: ((state10,), (1,)),
+             right: ((state21, state20), (0.9, 0.1))})
+        state21.define_action2state(
+            {left: ((state20,), (1,)),
+             right: ((state22,), (1,))})
+        state22.define_action2state(
+            {down: ((state12,), (1,)),
+             left: ((state21,), (1,)),
+             right: ((state23,), (1,))})
+        state23.define_action2state(
+            resdict(((state00,), (1,))))
+
+        # Rewards
+        state23.define_action2reward(
+            resdict(((food,), (1,))))
+        state03.define_action2reward(
+            resdict(((death,), (1,))))
+
         self.initial_state = state00
         self.agent = Agent(name='billy', state=self.initial_state, discount=discount, penalty=penalty)
         self.agent.define_actions(actions)
@@ -199,7 +265,7 @@ def select_action_helper(string, environment):
 
 if __name__ == '__main__':
 
-    environment = ClassicGridWorld()
+    environment = ClassicNonDeterministicGridWorld()
     # Play
     print('Play! (Write the name of the action you want to take)')
     print('Type "exit" to quit')
