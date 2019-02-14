@@ -28,7 +28,7 @@ if __name__ == '__main__':
     for state_action in state_action_set:
         state_action2vec[state_action] = k.utils.to_categorical(count, len(state_action_set))
         count += 1
-    value_net = net_model(100, len(state_action_set))
+    value_net = net_model(10, len(state_action_set))
     value_net.summary()
     lr = 0.001
     optim = k.optimizers.Adam(lr=lr)
