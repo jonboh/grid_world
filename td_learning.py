@@ -54,29 +54,29 @@ class TDAgent:
     def play_exploratory_episode(self, episode_length, explore_rate):
         episode = TDEpisode(episode_length)
         rand_vect = np.random.randn(episode_length)
-        rand_index = np.random.randint(0, len(environment.agent.actions), episode_length)  # not all will be used
+        rand_index = np.random.randint(0, len(self.environment.agent.actions), episode_length)  # not all will be used
         for t in range(episode_length):
-            state = environment.agent.state
+            state = self.environment.agent.state
             if rand_vect[t] >= explore_rate:
                 action = self.search_max_reward_action(state)
             else:
-                action = environment.agent.actions[rand_index[t]]
-            environment.agent.do_action(action)
-            episode.add_next_state_action_reward(state, action, environment.agent.reward)
-            environment.agent.reward = 0  # otherwise it will be accumulated
-        environment.reset()
+                action = self.environment.agent.actions[rand_index[t]]
+            self.environment.agent.do_action(action)
+            episode.add_next_state_action_reward(state, action, self.environment.agent.reward)
+            self.environment.agent.reward = 0  # otherwise it will be accumulated
+        self.environment.reset()
         self.unprocessed_episodes.append(episode)
         return episode
 
     def play_greedy_episode(self, episode_lenght):
         episode = TDEpisode(episode_lenght)
         for t in range(episode_lenght):
-            state = environment.agent.state
+            state = self.environment.agent.state
             action = self.search_max_reward_action(state)
-            environment.agent.do_action(action)
-            episode.add_next_state_action_reward(state, action, environment.agent.reward)
-            environment.agent.reward = 0  # otherwise it will be accumulated
-        environment.reset()
+            self.environment.agent.do_action(action)
+            episode.add_next_state_action_reward(state, action, self.environment.agent.reward)
+            self.environment.agent.reward = 0  # otherwise it will be accumulated
+        self.environment.reset()
         return episode
 
     def max_value_next_state(self, state):
@@ -113,7 +113,7 @@ class TDAgent:
         self.unprocessed_episodes = list()
 
     def print_policy(self):
-        states = environment.states
+        states = self.environment.states
         str_states = tuple(map(str, states))
         sorted_index = tuple(map(lambda x: str_states.index(x), sorted(str_states)))
         for i in sorted_index:
