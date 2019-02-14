@@ -51,11 +51,11 @@ class TDAgent:
         action = max_state_action[1]
         return action
 
-    def play_exploratory_episode(self, episode_lenght, explore_rate):
-        episode = TDEpisode(episode_lenght)
+    def play_exploratory_episode(self, episode_length, explore_rate):
+        episode = TDEpisode(episode_length)
         rand_vect = np.random.randn(episode_length)
         rand_index = np.random.randint(0, len(environment.agent.actions), episode_length)  # not all will be used
-        for t in range(episode_lenght):
+        for t in range(episode_length):
             state = environment.agent.state
             if rand_vect[t] >= explore_rate:
                 action = self.search_max_reward_action(state)
