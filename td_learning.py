@@ -48,7 +48,8 @@ class TDAgent:
             if self.value_table[state_action] > max_value:
                 max_state_action = state_action
                 max_value = self.value_table[state_action]
-        return max_state_action[1]
+        action = max_state_action[1]
+        return action
 
     def play_exploratory_episode(self, episode_lenght, explore_rate):
         episode = TDEpisode(episode_lenght)
