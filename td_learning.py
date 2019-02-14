@@ -112,7 +112,7 @@ class TDAgent:
         self.unprocessed_episodes = list()
 
     def print_policy(self):
-        states = tuple(set([state_action[0] for state_action in self.value_table.keys()]))
+        states = environment.states
         str_states = tuple(map(str, states))
         sorted_index = tuple(map(lambda x: str_states.index(x), sorted(str_states)))
         for i in sorted_index:
