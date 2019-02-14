@@ -120,6 +120,71 @@ class TDAgent:
             print('State {0} -> {1}'.format(states[i], self.search_max_reward_action(states[i])))
 
 
+class TDNeuralAgent(TDAgent):
+    def __init__(self, td_lambda, learn_rate, environment, neural_net, state_action2vec):
+        super(TDNeuralAgent, self).__init__(td_lambda, learn_rate, environment)
+        self.state_action2vec = state_action2vec
+        self.value_table = neural_net
+
+    def search_max_reward_action(self, state):
+        actions = self.environment.agent.actions
+        state_action_rep_matrix = np.zeros((len(actions), len(self.state_action2vec[(state, actions[0])])))
+        count = 0
+        for action in self.environment.agent.actions:
+            state_action_rep = self.state_action2vec[(state, action)]
+            state_action_rep_matrix[count, :] = state_action_rep
+            count += 1
+        values = self.value_table.predict(x=[state_action_rep_matrix])
+        max_value_index = np.argmax(values)
+        action = actions[max_value_index]
+        return action
+
+    def max_value_next_state(self, state):
+        actions = self.environment.agent.actions
+        state_action_rep_matrix = np.zeros((len(actions), len(self.state_action2vec[(state, actions[0])])))
+        count = 0
+        for action in self.environment.agent.actions:
+            state_action_rep = self.state_action2vec[(state, action)]
+            state_action_rep_matrix[count, :] = state_action_rep
+            count += 1
+        values = self.value_table.predict(x=[state_action_rep_matrix])
+        max_value = np.max(values)
+        return max_value
+
+    def process_episode(self, episode):
+        eligibility = dict.fromkeys(self.state_action2vec.keys(), 0)
+        prev_value_dict = dict()
+        for state_action in self.state_action2vec.keys():
+            prev_value_dict[state_action] = self.value_table.predict(x=np.array([self.state_action2vec[state_action]]))
+
+        state_action_matrix = np.zeros(
+            ((episode.length-1) * len(self.state_action2vec.keys()), len(self.state_action2vec.keys())))
+        new_value_matrix = np.zeros(((episode.length-1) * len(self.state_action2vec.keys()), 1))
+        count = 0
+        for t in range(episode.length):
+            eligibility[episode.states[t]] = eligibility[episode.states[t]] + 1
+            for state_action in self.state_action2vec.keys():
+                if t == episode.length - 1:
+                    break
+                if eligibility[state_action] == 0:
+                    state_action_matrix[count, :] = self.state_action2vec[state_action]
+                    new_value_matrix[count] = prev_value_dict[state_action]
+                    count += 1
+                else:
+                    prev_value = prev_value_dict[state_action]
+                    td_reward = (episode.rewards[t] +
+                                 self.environment.agent.discount * self.max_value_next_state(episode.states[t + 1][0]) -
+                                 prev_value) * eligibility[state_action]
+                    new_value = prev_value + td_reward
+                    eligibility[state_action] = self.td_lambda * self.environment.agent.discount * \
+                                                eligibility[state_action]
+                    state_action_matrix[count, :] = self.state_action2vec[state_action]
+                    new_value_matrix[count] = new_value
+                    count += 1
+        # BACKPROP REWARDS!
+        self.value_table.fit(x=state_action_matrix, y=new_value_matrix, verbose=0)
+
+
 def value_table_print(value_table):
     for key, value in value_table.items():
         print('{0}, {1:5}: {2:7.4f}'.format(key[0], key[1].__str__(), value))
